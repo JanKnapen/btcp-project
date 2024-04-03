@@ -1,0 +1,24 @@
+vier plekken om te implementeren:
+
+in client_socket.py:
+   implementeer hoe packets worden verzonden en ontvangen
+   later ook de handshake (connection) en de close implementeren
+
+
+in server_socket.py:
+    implementeer hoe packets worden ontvangen
+    later ook de handshke (acceptation) en de close
+    
+
+in client_app.py:
+   implementeer het (go-back-N) protocol client side
+
+
+in server_app.py:
+   implementeer het (go-back-N) protocol server side
+
+
+als dat allemaal klaar is:
+   combineer client en server socket in btcp socket
+
+   

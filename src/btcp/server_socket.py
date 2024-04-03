@@ -340,7 +340,7 @@ class BTCPServerSocket(BTCPSocket):
         Again, you should feel free to deviate from how this usually works.
         """
         logger.debug("recv called")
-        raise NotImplementedError("Only rudimentary implementation of recv present. Read the comments & code of server_socket.py, then remove the NotImplementedError.")
+        # raise NotImplementedError("Only rudimentary implementation of recv present. Read the comments & code of server_socket.py, then remove the NotImplementedError.")
 
         # Rudimentary example implementation:
         # Empty the queue in a loop, reading into a larger bytearray object.

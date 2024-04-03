@@ -209,7 +209,7 @@ class BTCPClientSocket(BTCPSocket):
         this project.
         """
         logger.debug("connect called")
-        raise NotImplementedError("No implementation of connect present. Read the comments & code of client_socket.py.")
+        # raise NotImplementedError("No implementation of connect present. Read the comments & code of client_socket.py.")
 
 
     def send(self, data):
@@ -240,7 +240,7 @@ class BTCPClientSocket(BTCPSocket):
         done later.
         """
         logger.debug("send called")
-        raise NotImplementedError("Only rudimentary implementation of send present. Read the comments & code of client_socket.py, then remove the NotImplementedError.")
+        # raise NotImplementedError("Only rudimentary implementation of send present. Read the comments & code of client_socket.py, then remove the NotImplementedError.")
 
         # Example with a finite buffer: a queue with at most 1000 chunks,
         # for a maximum of 985KiB data buffered to get turned into packets.
