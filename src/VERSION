@@ -1,0 +1,42 @@
+| Version    | Author | Changes                                                   |
+|------------|--------|-----------------------------------------------------------|
+| 2023-02-22 | Pol    | Initial version for 2023                                  |
+| v1.0       |        | NOTE: this has the wrong version of testframework.py      |
+|------------|--------|-----------------------------------------------------------|
+| 2023-02-23 | Pol    | Ship correct version of testframework.py                  |
+| v1.1       |        |                                                           |
+|            |        | Major improvements to test framework:                     |
+|            |        | - Test framework does not try to .communicate() with a    |
+|            |        |   process after an exception.                             |
+|            |        | - Test framework now uses a timeout and check to ensure   |
+|            |        |   client does not stay alive indefinitely if server dies. |
+|            |        | - Test framework now uses a timeout and check to ensure   |
+|            |        |   server process does not stay alive indefinitely after   |
+|            |        |   client has exited.                                      |
+|            |        | - Test framework clears OUTPUTFILE before running each    |
+|            |        |   test s.t. tests are not erroneously passed if server    |
+|            |        |   never writes anything.                                  |
+|            |        |                                                           |
+|            |        | Changes s.t. upon error, the entire application exits:    |
+|            |        | - Network thread is now daemonized, so if the application |
+|            |        |   thread exits (prematurely upon error or ctrl+C,         |
+|            |        |   without waiting for proper shutdown), the network       |
+|            |        |   thread also dies, rather than run indefinitely.         |
+|            |        | - Network thread, upon error, calls                       |
+|            |        |   signal.raise_signal(signal.SIGTERM). This causes the    |
+|            |        |   main thread to exit as well. Requires Python >= 3.8.    |
+|            |        |                                                           |
+|            |        | Added a timer example to the provided source.             |
+|------------|--------|-----------------------------------------------------------|
+| 2023-03-10 | Pol    | Fix error in the definition of                            |
+| v1.2       |        | BTCPServerSocket._closed_segment_received                 |
+|------------|--------|-----------------------------------------------------------|
+| 2023-03-15 | Pol    | - Fix error in calling _other_segment_received            |
+| v1.3       |        | - Fix (hopefully) errors in example timer logic           |
+|------------|--------|-----------------------------------------------------------|
+| 2024-02-20 | Bram   | Initial version for 2024                                  |
+| v2.0       |        | Inclusion of unit-testing in unittests.py                 |
+|------------|--------|-----------------------------------------------------------|
+| 2024-02-27 | Bram   | Some additional unit tests using an updated               |
+| v2.1       |        | lossy_layer.py, which now itself can add be lossiness.    |
+|------------|--------|-----------------------------------------------------------|

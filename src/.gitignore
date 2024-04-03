@@ -1,0 +1,7 @@
+output.file
+testframework-output.file
+__pycache__
+large_input.py
+
+# (Note to teachers:  please keep contents in sync with `src-impl/.gitignore`.)
+
