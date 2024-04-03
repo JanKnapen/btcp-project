@@ -1,6 +1,6 @@
-from btcp.btcp_socket import BTCPSocket, BTCPStates
-from btcp.lossy_layer import LossyLayer
-from btcp.constants import *
+from btcp_socket import BTCPSocket, BTCPStates
+from lossy_layer import LossyLayer
+from constants import *
 
 import queue
 import logging
@@ -131,7 +131,7 @@ class BTCPClientSocket(BTCPSocket):
         lossy_layer_segment_received or lossy_layer_tick.
         """
         logger.debug("lossy_layer_tick called")
-        raise NotImplementedError("Only rudimentary implementation of lossy_layer_tick present. Read the comments & code of client_socket.py, then remove the NotImplementedError.")
+        # raise NotImplementedError("Only rudimentary implementation of lossy_layer_tick present. Read the comments & code of client_socket.py, then remove the NotImplementedError.")
 
         # Actually send all chunks available for sending.
         # Relies on an eventual exception to break from the loop when no data

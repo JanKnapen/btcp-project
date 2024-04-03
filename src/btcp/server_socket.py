@@ -1,6 +1,6 @@
-from btcp.btcp_socket import BTCPSocket, BTCPStates, BTCPSignals
-from btcp.lossy_layer import LossyLayer
-from btcp.constants import *
+from btcp_socket import BTCPSocket, BTCPStates, BTCPSignals
+from lossy_layer import LossyLayer
+from constants import *
 
 import queue
 import time
@@ -123,7 +123,7 @@ class BTCPServerSocket(BTCPSocket):
         """
         logger.debug("lossy_layer_segment_received called")
         logger.debug(segment)
-        raise NotImplementedError("Only rudimentary implementation of lossy_layer_segment_received present. Read the comments & code of server_socket.py, then remove the NotImplementedError.")
+        # raise NotImplementedError("Only rudimentary implementation of lossy_layer_segment_received present. Read the comments & code of server_socket.py, then remove the NotImplementedError.")
 
         # match ... case is available since Python 3.10
         # Note, this is *not* the same as a "switch" statement from other
