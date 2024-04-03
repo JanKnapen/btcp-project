@@ -209,7 +209,7 @@ class BTCPClientSocket(BTCPSocket):
         this project.
         """
         logger.debug("connect called")
-        raise NotImplementedError("No implementation of connect present. Read the comments & code of client_socket.py.")
+        self._state = BTCPStates.ESTABLISHED
 
 
     def send(self, data):

@@ -305,7 +305,7 @@ class BTCPServerSocket(BTCPSocket):
         this project.
         """
         logger.debug("accept called")
-        raise NotImplementedError("No implementation of accept present. Read the comments & code of server_socket.py.")
+        self._state = BTCPStates.ESTABLISHED
 
 
     def recv(self):
