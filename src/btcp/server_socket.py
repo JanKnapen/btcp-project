@@ -1,6 +1,6 @@
-from btcp_socket import BTCPSocket, BTCPStates, BTCPSignals
-from lossy_layer import LossyLayer
-from constants import *
+from btcp.btcp_socket import BTCPSocket, BTCPStates, BTCPSignals
+from btcp.lossy_layer import LossyLayer
+from btcp.constants import *
 
 import queue
 import time
@@ -224,7 +224,7 @@ class BTCPServerSocket(BTCPSocket):
         logger.debug("lossy_layer_tick called")
         self._start_example_timer()
         self._expire_timers()
-        raise NotImplementedError("No implementation of lossy_layer_tick present. Read the comments & code of server_socket.py.")
+        # raise NotImplementedError("No implementation of lossy_layer_tick present. Read the comments & code of server_socket.py.")
 
 
     # The following two functions show you how you could implement a (fairly
@@ -305,7 +305,7 @@ class BTCPServerSocket(BTCPSocket):
         this project.
         """
         logger.debug("accept called")
-        raise NotImplementedError("No implementation of accept present. Read the comments & code of server_socket.py.")
+        #raise NotImplementedError("No implementation of accept present. Read the comments & code of server_socket.py.")
 
 
     def recv(self):

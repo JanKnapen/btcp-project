@@ -1,6 +1,6 @@
-from btcp_socket import BTCPSocket, BTCPStates
-from lossy_layer import LossyLayer
-from constants import *
+from btcp.btcp_socket import BTCPSocket, BTCPStates
+from btcp.lossy_layer import LossyLayer
+from btcp.constants import *
 
 import queue
 import logging
@@ -282,7 +282,7 @@ class BTCPClientSocket(BTCPSocket):
         more advanced thread synchronization in this project.
         """
         logger.debug("shutdown called")
-        raise NotImplementedError("No implementation of shutdown present. Read the comments & code of client_socket.py.")
+        #raise NotImplementedError("No implementation of shutdown present. Read the comments & code of client_socket.py.")
 
 
     def close(self):
