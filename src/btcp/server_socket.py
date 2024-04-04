@@ -133,6 +133,8 @@ class BTCPServerSocket(BTCPSocket):
                 self._closed_segment_received(segment)
             case BTCPStates.CLOSING:
                 self._closing_segment_received(segment)
+            case BTCPStates.ESTABLISHED:
+                self._established_segment_received(segment)
             case _:
                 self._other_segment_received(segment)
 
@@ -159,6 +161,30 @@ class BTCPServerSocket(BTCPSocket):
         logger.warning("Normally we wouldn't process this, but the "
                        "rudimentary implementation never leaves the CLOSED "
                        "state.")
+        # Get length from header. Change this to a proper segment header unpack
+        # after implementing BTCPSocket.unpack_segment_header in btcp_socket.py
+        datalen, = struct.unpack("!H", segment[6:8])
+        # Slice data from incoming segment.
+        chunk = segment[HEADER_SIZE:HEADER_SIZE + datalen]
+        # Pass data into receive buffer so that the application thread can
+        # retrieve it.
+        try:
+            self._recvbuf.put_nowait(chunk)
+        except queue.Full:
+            # Data gets dropped if the receive buffer is full. You need to
+            # ensure this doesn't happen by using window sizes and not
+            # acknowledging dropped data.
+            # Initially, while still developing other features,
+            # you can also just set the size limitation on the Queue
+            # much higher, or remove it altogether.
+            logger.critical("Data got dropped!")
+            logger.debug(chunk)
+
+    def _established_segment_received(self, segment):
+        """Helper method handling received segment in CLOSED state
+        """
+        logger.debug("_established_segment_received called")
+        
         # Get length from header. Change this to a proper segment header unpack
         # after implementing BTCPSocket.unpack_segment_header in btcp_socket.py
         datalen, = struct.unpack("!H", segment[6:8])
@@ -305,10 +331,13 @@ class BTCPServerSocket(BTCPSocket):
         this project.
         """
         logger.debug("accept called")
+        self._state = BTCPStates.ESTABLISHED
+
         #raise NotImplementedError("No implementation of accept present. Read the comments & code of server_socket.py.")
 
 
     def recv(self):
+        # handle incoming packets here
         """Return data that was received from the client to the application in
         a reliable way.
 
