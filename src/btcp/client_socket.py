@@ -143,7 +143,7 @@ class BTCPClientSocket(BTCPSocket):
                 logger.debug("Getting chunk from buffer.")
                 chunk = self._sendbuf.get_nowait()
                 datalen = len(chunk)
-                logger.debug("Got chunk with lenght %i:",
+                logger.debug("Got chunk with length %i:",
                              datalen)
                 logger.debug(chunk)
                 if datalen < PAYLOAD_SIZE:
@@ -214,7 +214,7 @@ class BTCPClientSocket(BTCPSocket):
 
 
     def send(self, data):
-        # add header here
+        
         """Send data originating from the application in a reliable way to the
         server.
 
