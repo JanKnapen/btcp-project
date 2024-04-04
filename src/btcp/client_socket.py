@@ -1,6 +1,6 @@
-from btcp_socket import BTCPSocket, BTCPStates
-from lossy_layer import LossyLayer
-from constants import *
+from btcp.btcp_socket import BTCPSocket, BTCPStates
+from btcp.lossy_layer import LossyLayer
+from btcp.constants import *
 
 import queue
 import logging
@@ -210,6 +210,9 @@ class BTCPClientSocket(BTCPSocket):
         """
         logger.debug("connect called")
         self._state = BTCPStates.ESTABLISHED
+        #   Simply hardcode some sensible values:
+        # Randomly generate 16-bit value            (which is put in the Sequence Number field)
+        #   Used for the first segment carrying data to the server
 
 
     def send(self, data):

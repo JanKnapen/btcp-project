@@ -1,6 +1,6 @@
-from btcp_socket import BTCPSocket, BTCPStates, BTCPSignals
-from lossy_layer import LossyLayer
-from constants import *
+from btcp.btcp_socket import BTCPSocket, BTCPStates, BTCPSignals
+from btcp.lossy_layer import LossyLayer
+from btcp.constants import *
 
 import queue
 import time
