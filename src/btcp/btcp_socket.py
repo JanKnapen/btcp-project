@@ -69,7 +69,24 @@ class BTCPSocket:
         then the resulting checksum should be put in its place.
         """
         logger.debug("in_cksum() called")
-        raise NotImplementedError("No implementation of in_cksum present. Read the comments & code of btcp_socket.py.")
+
+        # Pad an odd number of bytes with a 0-byte
+        if len(segment) % 2 == 1:
+            segment += b'\x00'
+
+        # Sum up the 16-bit words in the buffer
+        checksum = 0
+        for i in range(0, len(segment), 2):
+            word = (segment[i] << 8) + segment[i + 1]
+            checksum += word
+            # Add any overflow back into the sum (wrapping around)
+            checksum = (checksum & 0xFFFF) + (checksum >> 16)
+
+        # Take the binary inverse of the sum result, except when the result is 0xFFFF
+        checksum = checksum ^ 0xFFFF if checksum != 0xFFFF else checksum
+
+        return checksum
+
 
 
     @staticmethod
@@ -78,9 +95,8 @@ class BTCPSocket:
 
         Mind that you change *what* signals that to the correct value(s).
         """
-        logger.debug("verify_cksum() called")
-        raise NotImplementedError("No implementation of in_cksum present. Read the comments & code of btcp_socket.py.")
-        return BTCPSocket.in_cksum(segment) == 0xABCD
+
+        return BTCPSocket.in_cksum(segment) == 0xFFFF
 
 
     @staticmethod
@@ -123,5 +139,9 @@ class BTCPSocket:
         than make a separate method for every individual field.
         """
         logger.debug("unpack_segment_header() called")
-        raise NotImplementedError("No implementation of unpack_segment_header present. Read the comments & code of btcp_socket.py. You should really implement the packing / unpacking of the header into field values before doing anything else!")
+        return struct.unpack("!HHbbHH", header)
         logger.debug("unpack_segment_header() done")
+    
+
+        
+

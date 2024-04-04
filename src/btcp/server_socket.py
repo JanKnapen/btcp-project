@@ -187,8 +187,9 @@ class BTCPServerSocket(BTCPSocket):
         
         # Get length from header. Change this to a proper segment header unpack
         # after implementing BTCPSocket.unpack_segment_header in btcp_socket.py
-        seqnum, acknum, flags, window, datalen, cksumval = struct.unpack("!HHbbHH", segment[:HEADER_SIZE])
-        logger.debug("header is: {}, {}, {}. {}, {}, {}".format(seqnum, acknum, flags, window, datalen, cksumval))
+        seqnum, acknum, flags, window, datalen, cksumval = BTCPSocket.unpack_segment_header(segment[:HEADER_SIZE])
+        checksumvalid = BTCPSocket.verify_checksum(segment)
+        logger.debug("header is: {}, {}, {}. {}, {}, {}, checksumvalid={}".format(seqnum, acknum, flags, window, datalen, cksumval, checksumvalid))
         # datalen, = struct.unpack("!H", segment[6:8])
         # Slice data from incoming segment.
         chunk = segment[HEADER_SIZE:HEADER_SIZE + datalen]

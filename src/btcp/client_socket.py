@@ -150,8 +150,14 @@ class BTCPClientSocket(BTCPSocket):
                     logger.debug("Padding chunk to full size")
                     chunk = chunk + b'\x00' * (PAYLOAD_SIZE - datalen)
                 logger.debug("Building segment from chunk.")
-                segment = (self.build_segment_header(0, 0, length=datalen)
+                # build segment with header and checksum
+                candidate_segment = (self.build_segment_header(0, 0, length=datalen)
+                            + chunk)
+                cksumval = BTCPSocket.in_cksum(candidate_segment)
+                segment = (self.build_segment_header(0, 0, length=datalen, checksum=cksumval)
                            + chunk)
+                # segment = (self.build_segment_header(0, 0, length=datalen)
+                #             + chunk)
                 logger.info("Sending segment.")
                 self._lossy_layer.send_segment(segment)
         except queue.Empty:
