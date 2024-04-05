@@ -151,10 +151,12 @@ class BTCPClientSocket(BTCPSocket):
                     chunk = chunk + b'\x00' * (PAYLOAD_SIZE - datalen)
                 logger.debug("Building segment from chunk.")
                 # build segment with header and checksum
-                candidate_segment = (self.build_segment_header(0, 0, length=datalen)
+                sequence_number = self._seq_num
+                self._seq_num += datalen
+                candidate_segment = (self.build_segment_header(sequence_number, 0, length=datalen)
                             + chunk)
                 cksumval = BTCPSocket.in_cksum(candidate_segment)
-                segment = (self.build_segment_header(0, 0, length=datalen, checksum=cksumval)
+                segment = (self.build_segment_header(sequence_number, 0, length=datalen, checksum=cksumval)
                            + chunk)
                 # segment = (self.build_segment_header(0, 0, length=datalen)
                 #             + chunk)
@@ -216,6 +218,8 @@ class BTCPClientSocket(BTCPSocket):
         """
         logger.debug("connect called")
         self._state = BTCPStates.ESTABLISHED
+        # Random sequence start number
+        self._seq_num = 12345
         # raise NotImplementedError("No implementation of connect present. Read the comments & code of client_socket.py.")
 
 

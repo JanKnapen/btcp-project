@@ -197,6 +197,15 @@ class BTCPServerSocket(BTCPSocket):
         # retrieve it.
         try:
             self._recvbuf.put_nowait(chunk)
+
+            # SEND ACK TO CLIENT
+            # build segment with header and checksum
+            sequence_number = seqnum + datalen
+            candidate_segment = self.build_segment_header(sequence_number, 0)
+            cksumval = BTCPSocket.in_cksum(candidate_segment)
+            segment = self.build_segment_header(sequence_number, 0, checksum=cksumval)
+            logger.info("Sending ack.")
+            self._lossy_layer.send_segment(segment)
         except queue.Full:
             # Data gets dropped if the receive buffer is full. You need to
             # ensure this doesn't happen by using window sizes and not
