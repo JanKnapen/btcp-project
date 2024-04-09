@@ -126,6 +126,18 @@ class BTCPSocket:
         # logger.debug("build_segment_header() called")
         flag_byte = syn_set << 2 | ack_set << 1 | fin_set
         # logger.debug("build_segment_header() done")
+        if seqnum < 0 or seqnum > 65535:
+            logger.debug("seqnum")
+            raise Exception
+        if seqnum < 0 or acknum > 65535:
+            logger.debug("acknum")
+            raise Exception
+        if seqnum < 0 or length > 65535:
+            logger.debug("length")
+            raise Exception
+        if seqnum < 0 or checksum > 65535:
+            logger.debug("checksum")
+            raise Exception
         return struct.pack("!HHBBHH",
                            seqnum, acknum, flag_byte, window, length, checksum)
 
