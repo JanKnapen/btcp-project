@@ -147,7 +147,6 @@ class BTCPClientSocket(BTCPSocket):
             self._lossy_layer.send_segment(segment)
             self._seq_num = acknum
             self._send_base = acknum
-            self._window_size = window * 10
             self._state = BTCPStates.ESTABLISHED
 
 

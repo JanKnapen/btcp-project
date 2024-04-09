@@ -169,10 +169,9 @@ class BTCPServerSocket(BTCPSocket):
 
         if syn_set:
             self._seq_num = random.randrange(MAX_SEQUENCE_NUMBER + 1)
-            window_size = int(max((self._recvbuf.maxsize - self._recvbuf.qsize()) / 10, 1))
-            candidate_segment = self.build_segment_header(self._seq_num, seqnum + 1, window=window_size, ack_set=True, syn_set=True)
+            candidate_segment = self.build_segment_header(self._seq_num, seqnum + 1, ack_set=True, syn_set=True)
             cksumval = BTCPSocket.in_cksum(candidate_segment)
-            segment = self.build_segment_header(self._seq_num, seqnum + 1, window=window_size, ack_set=True, syn_set=True, checksum=cksumval)
+            segment = self.build_segment_header(self._seq_num, seqnum + 1, ack_set=True, syn_set=True, checksum=cksumval)
             logger.debug("SENDING SYN/ACK WITH SEQ NUM: " + str(self._seq_num) + " AND ACK: " + str(seqnum + 1))
             self._lossy_layer.send_segment(segment)
             self._state = BTCPStates.SYN_RCVD
