@@ -1,4 +1,5 @@
 import datetime
+import time
 
 from btcp.btcp_socket import BTCPSocket, BTCPStates
 from btcp.lossy_layer import LossyLayer
@@ -336,6 +337,9 @@ class BTCPClientSocket(BTCPSocket):
                     sent_bytes,
                     datalen)
         self._send_data()
+        while self._send_base != max(self._segment_data.keys()):
+            logger.debug("STAYING ALIVE")
+            time.sleep(1000)
         return sent_bytes
 
 
