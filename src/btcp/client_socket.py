@@ -218,7 +218,7 @@ class BTCPClientSocket(BTCPSocket):
 
 
     def _send_segment(self, segment_seq_num):
-            logger.info("Sending segment.")
+            logger.info("Sending segment: " + str(segment_seq_num))
             if segment_seq_num in self._segment_data:
                 segment_data = self._segment_data[segment_seq_num]
                 self._lossy_layer.send_segment(segment_data["segment"])
