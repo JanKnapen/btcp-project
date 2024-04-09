@@ -206,6 +206,7 @@ class BTCPServerSocket(BTCPSocket):
             # SEND ACK TO CLIENT
             # build segment with header and checksum
             sequence_number = self._last_received_seq_num
+            # TODO: ack seq number MAX_SEQUENCE_NUMBER
             candidate_segment = self.build_segment_header(0, sequence_number)
             cksumval = BTCPSocket.in_cksum(candidate_segment)
             segment = self.build_segment_header(0, sequence_number, checksum=cksumval)

@@ -139,8 +139,8 @@ class BTCPClientSocket(BTCPSocket):
 
         if acknum == self._send_base:
             logger.debug("SENDING NEXT SEGMENT WITHIN WINDOW")
-            self._send_base += 1
-            if self._send_base > max(self._segment_data.keys()):
+            self._send_base = 0 if self._send_base == MAX_SEQUENCE_NUMBER else self._send_base + 1
+            if self._send_base == self._seq_num - 1:
                 self._data_sent_and_received = True
             else:
                 self._send_segment(self._send_base + self._window_size - 1)
@@ -185,7 +185,10 @@ class BTCPClientSocket(BTCPSocket):
 
     def _resend_all_segments_in_window(self):
         for i in range(self._send_base, self._send_base + self._window_size):
-            self._send_segment(i)
+            if i > MAX_SEQUENCE_NUMBER:
+                self._send_segment(i - MAX_SEQUENCE_NUMBER - 1)
+            else:
+                self._send_segment(i)
 
 
     def _send_data(self):
@@ -207,7 +210,8 @@ class BTCPClientSocket(BTCPSocket):
                 # logger.debug("Building segment from chunk.")
                 # build segment with header and checksum
                 sequence_number = self._seq_num
-                self._seq_num += 1
+                self._seq_num = 0 if self._seq_num == MAX_SEQUENCE_NUMBER else self._seq_num + 1
+                # TODO: possibly wait until new sequence number is available
                 candidate_segment = (self.build_segment_header(sequence_number, 0, length=datalen)
                             + chunk)
                 cksumval = BTCPSocket.in_cksum(candidate_segment)
@@ -216,10 +220,18 @@ class BTCPClientSocket(BTCPSocket):
                 self._segment_data[sequence_number] = {
                     "segment": segment,
                 }
-                if sequence_number < (self._send_base + self._window_size):
+                if self._seq_num_in_window(sequence_number):
                     self._send_segment(sequence_number)
         except queue.Empty:
             logger.info("No (more) data was available for sending right now.")
+
+
+    def _seq_num_in_window(self, seq_num):
+        if seq_num >= self._send_base and (seq_num < self._send_base + self._window_size):
+            return True
+        if (self._send_base + self._window_size - 1 > MAX_SEQUENCE_NUMBER) and (seq_num < self._send_base + self._window_size - MAX_SEQUENCE_NUMBER - 1):
+            return True
+        return False
 
 
     def _send_segment(self, segment_seq_num):
