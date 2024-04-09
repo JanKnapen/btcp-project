@@ -140,7 +140,6 @@ class BTCPSocket:
         """
         logger.debug("unpack_segment_header() called")
         return struct.unpack("!HHBBHH", header)
-        logger.debug("unpack_segment_header() done")
     
 
         
