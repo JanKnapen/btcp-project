@@ -472,7 +472,6 @@ class BTCPServerSocket(BTCPSocket):
             # timeout signalling disconnect.
         logger.info("Blocking get for first chunk of data.")
         while self._state != BTCPStates.CLOSED:
-            logger.debug("STILL NOT CLOSED: " + str(self._state))
             try:
                 item = self._recvbuf.get_nowait()
                 data.extend(item)
