@@ -199,14 +199,13 @@ class BTCPServerSocket(BTCPSocket):
         # Pass data into receive buffer so that the application thread can
         # retrieve it.
         try:
-            if seqnum == self._last_received_seq_num + 1:
+            if (seqnum == 0 and self._last_received_seq_num == MAX_SEQUENCE_NUMBER) or seqnum == self._last_received_seq_num + 1:
                 self._recvbuf.put_nowait(chunk)
-                self._last_received_seq_num += 1
+                self._last_received_seq_num = 0 if self._last_received_seq_num == MAX_SEQUENCE_NUMBER else self._last_received_seq_num + 1
 
             # SEND ACK TO CLIENT
             # build segment with header and checksum
             sequence_number = self._last_received_seq_num
-            # TODO: ack seq number MAX_SEQUENCE_NUMBER
             candidate_segment = self.build_segment_header(0, sequence_number)
             cksumval = BTCPSocket.in_cksum(candidate_segment)
             segment = self.build_segment_header(0, sequence_number, checksum=cksumval)
