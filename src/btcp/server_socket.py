@@ -1,3 +1,5 @@
+import random
+
 from btcp.btcp_socket import BTCPSocket, BTCPStates, BTCPSignals
 from btcp.lossy_layer import LossyLayer
 from btcp.constants import *
@@ -135,6 +137,10 @@ class BTCPServerSocket(BTCPSocket):
                 self._closing_segment_received(segment)
             case BTCPStates.ESTABLISHED:
                 self._established_segment_received(segment)
+            case BTCPStates.ACCEPTING:
+                self._accepting_segment_received(segment)
+            case BTCPStates.SYN_RCVD:
+                self._syn_rcvd_segment_received(segment)
             case _:
                 self._other_segment_received(segment)
 
@@ -151,6 +157,36 @@ class BTCPServerSocket(BTCPSocket):
 
         self._expire_timers()
         return
+
+
+    def _accepting_segment_received(self, segment):
+        seqnum, acknum, syn_set, ack_set, fin_set, window, length, checksum = BTCPSocket.unpack_segment_header(segment[:HEADER_SIZE])
+        checksumvalid = BTCPSocket.verify_checksum(segment)
+        logger.debug("header is: {}, {}, {}, {}, {}, {}, {}, {}, checksumvalid={}".format(seqnum, acknum, syn_set, ack_set, fin_set, window, length, checksum, checksumvalid))
+        if not checksumvalid:
+            logger.debug("Received segment with invalid checksum")
+            return
+
+        if syn_set:
+            self._seq_num = random.randrange(MAX_SEQUENCE_NUMBER + 1)
+            candidate_segment = self.build_segment_header(self._seq_num, seqnum + 1, ack_set=True, syn_set=True)
+            cksumval = BTCPSocket.in_cksum(candidate_segment)
+            segment = self.build_segment_header(self._seq_num, seqnum + 1, ack_set=True, syn_set=True, checksum=cksumval)
+            logger.debug("SENDING SYN/ACK WITH SEQ NUM: " + str(self._seq_num) + " AND ACK: " + str(seqnum + 1))
+            self._lossy_layer.send_segment(segment)
+            self._state = BTCPStates.SYN_RCVD
+
+
+    def _syn_rcvd_segment_received(self, segment):
+        seqnum, acknum, syn_set, ack_set, fin_set, window, length, checksum = BTCPSocket.unpack_segment_header(segment[:HEADER_SIZE])
+        checksumvalid = BTCPSocket.verify_checksum(segment)
+        logger.debug("header is: {}, {}, {}, {}, {}, {}, {}, {}, checksumvalid={}".format(seqnum, acknum, syn_set, ack_set, fin_set, window, length, checksum, checksumvalid))
+        if not checksumvalid:
+            logger.debug("Received segment with invalid checksum")
+            return
+
+        if ack_set and acknum == self._seq_num + 1:
+            self._state = BTCPStates.ESTABLISHED
 
 
     def _closed_segment_received(self, segment):
@@ -187,9 +223,9 @@ class BTCPServerSocket(BTCPSocket):
         
         # Get length from header. Change this to a proper segment header unpack
         # after implementing BTCPSocket.unpack_segment_header in btcp_socket.py
-        seqnum, acknum, flags, window, datalen, cksumval = BTCPSocket.unpack_segment_header(segment[:HEADER_SIZE])
+        seqnum, acknum, syn_set, ack_set, fin_set, window, datalen, checksum = BTCPSocket.unpack_segment_header(segment[:HEADER_SIZE])
         checksumvalid = BTCPSocket.verify_checksum(segment)
-        logger.debug("header is: {}, {}, {}, {}, {}, {}, checksumvalid={}".format(seqnum, acknum, flags, window, datalen, cksumval, checksumvalid))
+        logger.debug("header is: {}, {}, {}, {}, {}, {}, {}, {}, checksumvalid={}".format(seqnum, acknum, syn_set, ack_set, fin_set, window, datalen, checksum, checksumvalid))
         if not checksumvalid:
             logger.debug("Received segment with invalid checksum")
             return
@@ -351,8 +387,11 @@ class BTCPServerSocket(BTCPSocket):
         this project.
         """
         logger.debug("accept called")
-        self._state = BTCPStates.ESTABLISHED
-        self._last_received_seq_num = 10 - 1
+        self._state = BTCPStates.ACCEPTING
+
+        while self._state != BTCPStates.ESTABLISHED:
+            time.sleep(0.005)
+        # self._last_received_seq_num = 10 - 1
 
 
     def recv(self):

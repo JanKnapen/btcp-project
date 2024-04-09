@@ -1,4 +1,5 @@
 import datetime
+import random
 import time
 
 from btcp.btcp_socket import BTCPSocket, BTCPStates
@@ -114,6 +115,8 @@ class BTCPClientSocket(BTCPSocket):
         match self._state:
             case BTCPStates.ESTABLISHED:
                 self._established_segment_received(segment)
+            case BTCPStates.SYN_SENT:
+                self._syn_sent_segment_received(segment)
             case _:
                 self._other_segment_received(segment)
 
@@ -127,12 +130,31 @@ class BTCPClientSocket(BTCPSocket):
         self._send_data()
 
 
+    def _syn_sent_segment_received(self, segment):
+        seqnum, acknum, syn_set, ack_set, fin_set, window, length, checksum = BTCPSocket.unpack_segment_header(segment[:HEADER_SIZE])
+        checksumvalid = BTCPSocket.verify_checksum(segment)
+        logger.debug("header is: {}, {}, {}, {}, {}, {}, {}, {}, checksumvalid={}".format(seqnum, acknum, syn_set, ack_set, fin_set, window, length, checksum, checksumvalid))
+        if not checksumvalid:
+            logger.debug("Received segment with invalid checksum")
+            return
+
+        if syn_set and ack_set and acknum == self._seq_num + 1:
+            candidate_segment = self.build_segment_header(acknum, seqnum + 1, ack_set=True)
+            cksumval = BTCPSocket.in_cksum(candidate_segment)
+            segment = self.build_segment_header(acknum, seqnum + 1, ack_set=True, checksum=cksumval)
+            logger.debug("SENDING ACK WITH SEQ NUM: " + str(acknum) + " AND ACK: " + str(seqnum + 1))
+            self._lossy_layer.send_segment(segment)
+            self._seq_num = acknum
+            self._send_base = acknum
+            self._state = BTCPStates.ESTABLISHED
+
+
     def _established_segment_received(self, segment):
         logger.debug("_established_segment_received called")
 
-        seqnum, acknum, flags, window, datalen, cksumval = BTCPSocket.unpack_segment_header(segment[:HEADER_SIZE])
+        seqnum, acknum, syn_set, ack_set, fin_set, window, length, checksum = BTCPSocket.unpack_segment_header(segment[:HEADER_SIZE])
         checksumvalid = BTCPSocket.verify_checksum(segment)
-        logger.debug("header is: {}, {}, {}, {}, {}, {}, checksumvalid={}".format(seqnum, acknum, flags, window, datalen, cksumval, checksumvalid))
+        logger.debug("header is: {}, {}, {}, {}, {}, {}, {}, {}, checksumvalid={}".format(seqnum, acknum, syn_set, ack_set, fin_set, window, length, checksum, checksumvalid))
         if not checksumvalid:
             logger.debug("Received segment with invalid checksum")
             return
@@ -211,7 +233,6 @@ class BTCPClientSocket(BTCPSocket):
                 # build segment with header and checksum
                 sequence_number = self._seq_num
                 self._seq_num = 0 if self._seq_num == MAX_SEQUENCE_NUMBER else self._seq_num + 1
-                # TODO: possibly wait until new sequence number is available
                 candidate_segment = (self.build_segment_header(sequence_number, 0, length=datalen)
                             + chunk)
                 cksumval = BTCPSocket.in_cksum(candidate_segment)
@@ -293,11 +314,19 @@ class BTCPClientSocket(BTCPSocket):
         this project.
         """
         logger.debug("connect called")
-        self._state = BTCPStates.ESTABLISHED
         # Random sequence start number
-        self._seq_num = 10
-        self._send_base = 10
-        # raise NotImplementedError("No implementation of connect present. Read the comments & code of client_socket.py.")
+
+        self._seq_num = random.randrange(MAX_SEQUENCE_NUMBER + 1)
+
+        candidate_segment = self.build_segment_header(self._seq_num, 0, syn_set=True)
+        cksumval = BTCPSocket.in_cksum(candidate_segment)
+        segment = self.build_segment_header(self._seq_num, 0, syn_set=True, checksum=cksumval)
+        logger.debug("SENDING SYN WITH SEQ NUM: " + str(self._seq_num))
+        self._lossy_layer.send_segment(segment)
+        self._state = BTCPStates.SYN_SENT
+
+        while self._state != BTCPStates.ESTABLISHED:
+            time.sleep(0.005)
 
 
     def send(self, data):
@@ -373,7 +402,7 @@ class BTCPClientSocket(BTCPSocket):
         """
         logger.debug("shutdown called")
         while not self._data_sent_and_received:
-            time.sleep(0.001)
+            time.sleep(0.005)
 
 
     def close(self):
