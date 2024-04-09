@@ -120,14 +120,15 @@ class BTCPClientSocket(BTCPSocket):
             case _:
                 self._other_segment_received(segment)
 
-        if self._send_base in self._segment_data and "sent_on" in self._segment_data[self._send_base]:
-            logger.debug("CHECKING TIMEOUT for SEND BASE: " + str(self._send_base))
-            total_milliseconds = (datetime.datetime.now() - self._segment_data[self._send_base]["sent_on"]).total_seconds() * 1000
-            if total_milliseconds > TIMER_TICK:
-                logger.debug("TIMEOUT")
-                self._resend_all_segments_in_window()
+        if self._state == BTCPStates.ESTABLISHED:
+            if self._send_base in self._segment_data and "sent_on" in self._segment_data[self._send_base]:
+                logger.debug("CHECKING TIMEOUT for SEND BASE: " + str(self._send_base))
+                total_milliseconds = (datetime.datetime.now() - self._segment_data[self._send_base]["sent_on"]).total_seconds() * 1000
+                if total_milliseconds > TIMER_TICK:
+                    logger.debug("TIMEOUT")
+                    self._resend_all_segments_in_window()
 
-        self._send_data()
+            self._send_data()
 
 
     def _syn_sent_segment_received(self, segment):
@@ -200,9 +201,10 @@ class BTCPClientSocket(BTCPSocket):
         """
         logger.debug("lossy_layer_tick called")
 
-        self._resend_all_segments_in_window()
+        if self._state == BTCPStates.ESTABLISHED:
+            self._resend_all_segments_in_window()
 
-        self._send_data()
+            self._send_data()
 
 
     def _resend_all_segments_in_window(self):
