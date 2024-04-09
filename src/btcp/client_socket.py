@@ -203,7 +203,7 @@ class BTCPClientSocket(BTCPSocket):
         """
         logger.debug("lossy_layer_tick called")
 
-        match self._stage:
+        match self.state:
             case BTCPStates.ESTABLISHED:
                 self._resend_all_segments_in_window()
 
