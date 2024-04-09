@@ -205,6 +205,10 @@ class BTCPClientSocket(BTCPSocket):
             self._resend_all_segments_in_window()
 
             self._send_data()
+        if self._state == BTCPStates.SYN_SENT:
+            total_milliseconds = (datetime.datetime.now() - self._syn_sent_on).total_seconds() * 1000
+            if total_milliseconds > TIMER_TICK:
+                self._initialize_connection()
 
 
     def _resend_all_segments_in_window(self):
@@ -265,6 +269,18 @@ class BTCPClientSocket(BTCPSocket):
                 self._segment_data[segment_seq_num]["sent_on"] = datetime.datetime.now()
 
 
+    def _initialize_connection(self):
+        self._seq_num = random.randrange(MAX_SEQUENCE_NUMBER + 1)
+
+        candidate_segment = self.build_segment_header(self._seq_num, 0, syn_set=True)
+        cksumval = BTCPSocket.in_cksum(candidate_segment)
+        segment = self.build_segment_header(self._seq_num, 0, syn_set=True, checksum=cksumval)
+        logger.debug("SENDING SYN WITH SEQ NUM: " + str(self._seq_num))
+        self._lossy_layer.send_segment(segment)
+        self._state = BTCPStates.SYN_SENT
+        self._syn_sent_on = datetime.datetime.now()
+
+
 
     ###########################################################################
     ### You're also building the socket API for the applications to use.    ###
@@ -318,14 +334,7 @@ class BTCPClientSocket(BTCPSocket):
         logger.debug("connect called")
         # Random sequence start number
 
-        self._seq_num = random.randrange(MAX_SEQUENCE_NUMBER + 1)
-
-        candidate_segment = self.build_segment_header(self._seq_num, 0, syn_set=True)
-        cksumval = BTCPSocket.in_cksum(candidate_segment)
-        segment = self.build_segment_header(self._seq_num, 0, syn_set=True, checksum=cksumval)
-        logger.debug("SENDING SYN WITH SEQ NUM: " + str(self._seq_num))
-        self._lossy_layer.send_segment(segment)
-        self._state = BTCPStates.SYN_SENT
+        self._initialize_connection()
 
         while self._state != BTCPStates.ESTABLISHED:
             time.sleep(0.005)
