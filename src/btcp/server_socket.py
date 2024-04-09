@@ -473,7 +473,7 @@ class BTCPServerSocket(BTCPSocket):
             logger.info("Blocking get for first chunk of data.")
             while self._state != BTCPStates.CLOSED:
                 logger.debug("STILL NOT CLOSED: " + str(self._state))
-                item = self._recvbuf.get()
+                item = self._recvbuf.get_nowait()
                 if item is not None:
                     logger.debug("FOUND AN ITEM: " + str(item))
                     data.extend(item)
