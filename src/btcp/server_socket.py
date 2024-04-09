@@ -1,4 +1,3 @@
-import datetime
 import random
 
 from btcp.btcp_socket import BTCPSocket, BTCPStates, BTCPSignals
@@ -471,7 +470,12 @@ class BTCPServerSocket(BTCPSocket):
             # Wait until one segment becomes available in the buffer, or
             # timeout signalling disconnect.
             logger.info("Blocking get for first chunk of data.")
-            data.extend(self._recvbuf.get(block=True, timeout=30))
+            while self._state != BTCPStates.CLOSED:
+                item = self._recvbuf.get()
+                if item is not None:
+                    data.extend(item)
+                    break
+                    # data.extend(self._recvbuf.get(block=True, timeout=30))
             logger.debug("First chunk of data retrieved.")
             logger.debug("Looping over rest of queue.")
             while True:
