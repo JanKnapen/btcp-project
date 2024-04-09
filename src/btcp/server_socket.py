@@ -190,6 +190,9 @@ class BTCPServerSocket(BTCPSocket):
         seqnum, acknum, flags, window, datalen, cksumval = BTCPSocket.unpack_segment_header(segment[:HEADER_SIZE])
         checksumvalid = BTCPSocket.verify_checksum(segment)
         logger.debug("header is: {}, {}, {}. {}, {}, {}, checksumvalid={}".format(seqnum, acknum, flags, window, datalen, cksumval, checksumvalid))
+        if not checksumvalid:
+            logger.debug("Received segment with invalid checksum")
+            return
         # datalen, = struct.unpack("!H", segment[6:8])
         # Slice data from incoming segment.
         chunk = segment[HEADER_SIZE:HEADER_SIZE + datalen]

@@ -106,7 +106,35 @@ class BTCPClientSocket(BTCPSocket):
         each elif.
         """
         logger.debug("lossy_layer_segment_received called")
-        raise NotImplementedError("No implementation of lossy_layer_segment_received present. Read the comments & code of client_socket.py.")
+
+        match self._state:
+            case BTCPStates.ESTABLISHED:
+                self._established_segment_received(segment)
+            case _:
+                self._other_segment_received(segment)
+
+
+    def _established_segment_received(self, segment):
+        logger.debug("_established_segment_received called")
+
+        seqnum, acknum, flags, window, datalen, cksumval = BTCPSocket.unpack_segment_header(segment[:HEADER_SIZE])
+        checksumvalid = BTCPSocket.verify_checksum(segment)
+        logger.debug("header is: {}, {}, {}. {}, {}, {}, checksumvalid={}".format(seqnum, acknum, flags, window, datalen, cksumval, checksumvalid))
+        if not checksumvalid:
+            logger.debug("Received segment with invalid checksum")
+            return
+
+        if acknum == self._send_base:
+            self._send_base += 1
+            next_segment = self._segments[self._send_base + self._window_size - 1]
+            if next_segment:
+                self._lossy_layer.send_segment(next_segment)
+
+
+    def _other_segment_received(self, segment):
+        logger.debug("_other_segment_received called")
+        logger.info("Segment received in %s state",
+                    self._state)
 
 
     def lossy_layer_tick(self):
