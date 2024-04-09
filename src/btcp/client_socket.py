@@ -203,14 +203,19 @@ class BTCPClientSocket(BTCPSocket):
         """
         logger.debug("lossy_layer_tick called")
 
-        if self._state == BTCPStates.ESTABLISHED:
-            self._resend_all_segments_in_window()
+        match self._stage:
+            case BTCPStates.ESTABLISHED:
+                self._resend_all_segments_in_window()
 
-            self._send_data()
-        if self._state == BTCPStates.SYN_SENT:
-            total_milliseconds = (datetime.datetime.now() - self._syn_sent_on).total_seconds() * 1000
-            if total_milliseconds > TIMER_TICK:
-                self._initialize_connection()
+                self._send_data()
+            case BTCPStates.SYN_SENT:
+                total_milliseconds = (datetime.datetime.now() - self._syn_sent_on).total_seconds() * 1000
+                if total_milliseconds > TIMER_TICK:
+                    self._initialize_connection()
+            case BTCPStates.FIN_SENT:
+                total_milliseconds = (datetime.datetime.now() - self._fin_sent_on).total_seconds() * 1000
+                if total_milliseconds > TIMER_TICK:
+                    self._close_connection()
 
 
     def _resend_all_segments_in_window(self):
@@ -312,6 +317,10 @@ class BTCPClientSocket(BTCPSocket):
             self._lossy_layer.send_segment(segment)
             self._state = BTCPStates.CLOSED
             self._connection_terminated = True
+        else:
+            total_milliseconds = (datetime.datetime.now() - self._fin_sent_on).total_seconds() * 1000
+            if total_milliseconds > TIMER_TICK:
+                self._close_connection()
 
 
 
