@@ -169,7 +169,7 @@ class BTCPServerSocket(BTCPSocket):
 
         if syn_set:
             self._seq_num = random.randrange(MAX_SEQUENCE_NUMBER + 1)
-                window_size = max((self._recvbuf.maxsize - self._recvbuf.qsize()) / 10, 1)
+            window_size = max((self._recvbuf.maxsize - self._recvbuf.qsize()) / 10, 1)
             candidate_segment = self.build_segment_header(self._seq_num, seqnum + 1, window=window_size, ack_set=True, syn_set=True)
             cksumval = BTCPSocket.in_cksum(candidate_segment)
             segment = self.build_segment_header(self._seq_num, seqnum + 1, window=window_size, ack_set=True, syn_set=True, checksum=cksumval)
