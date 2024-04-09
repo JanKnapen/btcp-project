@@ -122,7 +122,7 @@ class BTCPServerSocket(BTCPSocket):
         each elif.
         """
         logger.debug("lossy_layer_segment_received called")
-        logger.debug(segment)
+        # logger.debug(segment)
         # raise NotImplementedError("Only rudimentary implementation of lossy_layer_segment_received present. Read the comments & code of server_socket.py, then remove the NotImplementedError.")
 
         # match ... case is available since Python 3.10
@@ -189,7 +189,7 @@ class BTCPServerSocket(BTCPSocket):
         # after implementing BTCPSocket.unpack_segment_header in btcp_socket.py
         seqnum, acknum, flags, window, datalen, cksumval = BTCPSocket.unpack_segment_header(segment[:HEADER_SIZE])
         checksumvalid = BTCPSocket.verify_checksum(segment)
-        logger.debug("header is: {}, {}, {}. {}, {}, {}, checksumvalid={}".format(seqnum, acknum, flags, window, datalen, cksumval, checksumvalid))
+        logger.debug("header is: {}, {}, {}, {}, {}, {}, checksumvalid={}".format(seqnum, acknum, flags, window, datalen, cksumval, checksumvalid))
         if not checksumvalid:
             logger.debug("Received segment with invalid checksum")
             return
@@ -209,7 +209,7 @@ class BTCPServerSocket(BTCPSocket):
             candidate_segment = self.build_segment_header(0, sequence_number)
             cksumval = BTCPSocket.in_cksum(candidate_segment)
             segment = self.build_segment_header(0, sequence_number, checksum=cksumval)
-            logger.info("Sending ack.")
+            logger.info("Sending ack. with acknum: " + str(sequence_number))
             self._lossy_layer.send_segment(segment)
         except queue.Full:
             # Data gets dropped if the receive buffer is full. You need to
@@ -219,7 +219,7 @@ class BTCPServerSocket(BTCPSocket):
             # you can also just set the size limitation on the Queue
             # much higher, or remove it altogether.
             logger.critical("Data got dropped!")
-            logger.debug(chunk)
+            # logger.debug(chunk)
 
 
     def _closing_segment_received(self, segment):
@@ -264,7 +264,7 @@ class BTCPServerSocket(BTCPSocket):
         candidate to put in a helper method which can be called from either
         lossy_layer_segment_received or lossy_layer_tick.
         """
-        logger.debug("lossy_layer_tick called")
+        # logger.debug("lossy_layer_tick called")
         self._start_example_timer()
         self._expire_timers()
         # raise NotImplementedError("No implementation of lossy_layer_tick present. Read the comments & code of server_socket.py.")
@@ -277,24 +277,27 @@ class BTCPServerSocket(BTCPSocket):
     # lossy_layer_tick.
     def _start_example_timer(self):
         if not self._example_timer:
-            logger.debug("Starting example timer.")
+            # logger.debug("Starting example timer.")
             # Time in *nano*seconds, not milli- or microseconds.
             # Using a monotonic clock ensures independence of weird stuff
             # like leap seconds and timezone changes.
             self._example_timer = time.monotonic_ns()
         else:
-            logger.debug("Example timer already running.")
+            x = 1
+            # logger.debug("Example timer already running.")
 
 
     def _expire_timers(self):
         curtime = time.monotonic_ns()
         if not self._example_timer:
-            logger.debug("Example timer not running.")
+            x = 1
+            # logger.debug("Example timer not running.")
         elif curtime - self._example_timer > self._timeout * 1_000_000:
-            logger.debug("Example timer elapsed.")
+            # logger.debug("Example timer elapsed.")
             self._example_timer = None
         else:
-            logger.debug("Example timer not yet elapsed.")
+            x = 1
+            # logger.debug("Example timer not yet elapsed.")
 
 
     ###########################################################################
@@ -349,7 +352,7 @@ class BTCPServerSocket(BTCPSocket):
         """
         logger.debug("accept called")
         self._state = BTCPStates.ESTABLISHED
-        self._last_received_seq_num = 12345 - 1
+        self._last_received_seq_num = 10 - 1
 
 
     def recv(self):

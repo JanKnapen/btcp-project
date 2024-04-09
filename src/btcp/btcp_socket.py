@@ -68,7 +68,7 @@ class BTCPSocket:
         segment, the checksum field in the header should be set to 0x0000, and
         then the resulting checksum should be put in its place.
         """
-        logger.debug("in_cksum() called")
+        # logger.debug("in_cksum() called")
 
         # Pad an odd number of bytes with a 0-byte
         if len(segment) % 2 == 1:
@@ -123,9 +123,9 @@ class BTCPSocket:
         you don't have to always set all flags explicitly true/false, or give
         a checksum of 0 when creating the header for checksum computation.
         """
-        logger.debug("build_segment_header() called")
+        # logger.debug("build_segment_header() called")
         flag_byte = syn_set << 2 | ack_set << 1 | fin_set
-        logger.debug("build_segment_header() done")
+        # logger.debug("build_segment_header() done")
         return struct.pack("!HHBBHH",
                            seqnum, acknum, flag_byte, window, length, checksum)
 
@@ -138,7 +138,7 @@ class BTCPSocket:
         tupling, so it's easy to simply return all of them in one go rather
         than make a separate method for every individual field.
         """
-        logger.debug("unpack_segment_header() called")
+        # logger.debug("unpack_segment_header() called")
         return struct.unpack("!HHBBHH", header)
     
 

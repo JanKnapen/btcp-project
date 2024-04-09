@@ -116,8 +116,10 @@ class BTCPClientSocket(BTCPSocket):
                 self._other_segment_received(segment)
 
         if self._send_base in self._segment_data and "sent_on" in self._segment_data[self._send_base]:
+            logger.debug("CHECKING TIMEOUT for SEND BASE: " + str(self._send_base))
             total_milliseconds = (datetime.datetime.now() - self._segment_data[self._send_base]["sent_on"]).total_seconds() * 1000
             if total_milliseconds > TIMER_TICK:
+                logger.debug("TIMEOUT")
                 self._resend_all_segments_in_window()
 
         self._send_data()
@@ -128,12 +130,13 @@ class BTCPClientSocket(BTCPSocket):
 
         seqnum, acknum, flags, window, datalen, cksumval = BTCPSocket.unpack_segment_header(segment[:HEADER_SIZE])
         checksumvalid = BTCPSocket.verify_checksum(segment)
-        logger.debug("header is: {}, {}, {}. {}, {}, {}, checksumvalid={}".format(seqnum, acknum, flags, window, datalen, cksumval, checksumvalid))
+        logger.debug("header is: {}, {}, {}, {}, {}, {}, checksumvalid={}".format(seqnum, acknum, flags, window, datalen, cksumval, checksumvalid))
         if not checksumvalid:
             logger.debug("Received segment with invalid checksum")
             return
 
         if acknum == self._send_base:
+            logger.debug("SENDING NEXT SEGMENT WITHIN WINDOW")
             self._send_base += 1
             self._send_segment(self._send_base + self._window_size - 1)
 
@@ -188,16 +191,15 @@ class BTCPClientSocket(BTCPSocket):
         # and storing the segments for retransmission somewhere.
         try:
             while True:
-                logger.debug("Getting chunk from buffer.")
+                # logger.debug("Getting chunk from buffer.")
                 chunk = self._sendbuf.get_nowait()
                 datalen = len(chunk)
-                logger.debug("Got chunk with length %i:",
-                             datalen)
-                logger.debug(chunk)
+                # logger.debug("Got chunk with length %i:", datalen)
+                # logger.debug(chunk)
                 if datalen < PAYLOAD_SIZE:
-                    logger.debug("Padding chunk to full size")
+                    # logger.debug("Padding chunk to full size")
                     chunk = chunk + b'\x00' * (PAYLOAD_SIZE - datalen)
-                logger.debug("Building segment from chunk.")
+                # logger.debug("Building segment from chunk.")
                 # build segment with header and checksum
                 sequence_number = self._seq_num
                 self._seq_num += 1
@@ -276,8 +278,8 @@ class BTCPClientSocket(BTCPSocket):
         logger.debug("connect called")
         self._state = BTCPStates.ESTABLISHED
         # Random sequence start number
-        self._seq_num = 12345
-        self._send_base = 12345
+        self._seq_num = 10
+        self._send_base = 10
         # raise NotImplementedError("No implementation of connect present. Read the comments & code of client_socket.py.")
 
 
@@ -333,6 +335,7 @@ class BTCPClientSocket(BTCPSocket):
         logger.info("Managed to queue %i out of %i bytes for transmission",
                     sent_bytes,
                     datalen)
+        self._send_data()
         return sent_bytes
 
 
