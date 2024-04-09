@@ -238,7 +238,7 @@ class BTCPClientSocket(BTCPSocket):
                 # logger.debug("Building segment from chunk.")
                 # build segment with header and checksum
                 sequence_number = self._seq_num
-                if self._seq_num > self._send_base:
+                if self._seq_num + 1 == self._send_base:
                     logger.debug("SEQ NUM: " + str(self._seq_num) + " goes over SEND BASE: " + str(self._send_base))
                     raise Exception
                 self._seq_num = 0 if self._seq_num == MAX_SEQUENCE_NUMBER else self._seq_num + 1
