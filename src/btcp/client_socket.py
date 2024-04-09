@@ -45,6 +45,9 @@ class BTCPClientSocket(BTCPSocket):
         super().__init__(window, timeout)
         self._lossy_layer = LossyLayer(self, CLIENT_IP, CLIENT_PORT, SERVER_IP, SERVER_PORT)
 
+        self._window_size = 5
+        self._segments = {}
+
         # The data buffer used by send() to send data from the application
         # thread into the network thread. Bounded in size.
         self._sendbuf = queue.Queue(maxsize=1000)
@@ -131,7 +134,6 @@ class BTCPClientSocket(BTCPSocket):
         lossy_layer_segment_received or lossy_layer_tick.
         """
         logger.debug("lossy_layer_tick called")
-        # raise NotImplementedError("Only rudimentary implementation of lossy_layer_tick present. Read the comments & code of client_socket.py, then remove the NotImplementedError.")
 
         # Actually send all chunks available for sending.
         # Relies on an eventual exception to break from the loop when no data
@@ -152,16 +154,16 @@ class BTCPClientSocket(BTCPSocket):
                 logger.debug("Building segment from chunk.")
                 # build segment with header and checksum
                 sequence_number = self._seq_num
-                self._seq_num += datalen
+                self._seq_num += 1
                 candidate_segment = (self.build_segment_header(sequence_number, 0, length=datalen)
                             + chunk)
                 cksumval = BTCPSocket.in_cksum(candidate_segment)
                 segment = (self.build_segment_header(sequence_number, 0, length=datalen, checksum=cksumval)
                            + chunk)
-                # segment = (self.build_segment_header(0, 0, length=datalen)
-                #             + chunk)
-                logger.info("Sending segment.")
-                self._lossy_layer.send_segment(segment)
+                self._segments[sequence_number] = segment
+                if sequence_number < (self._send_base + self._window_size):
+                    logger.info("Sending segment.")
+                    self._lossy_layer.send_segment(segment)
         except queue.Empty:
             logger.info("No (more) data was available for sending right now.")
 
@@ -220,6 +222,7 @@ class BTCPClientSocket(BTCPSocket):
         self._state = BTCPStates.ESTABLISHED
         # Random sequence start number
         self._seq_num = 12345
+        self._send_base = 12345
         # raise NotImplementedError("No implementation of connect present. Read the comments & code of client_socket.py.")
 
 

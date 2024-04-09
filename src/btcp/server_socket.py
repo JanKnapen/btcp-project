@@ -196,11 +196,13 @@ class BTCPServerSocket(BTCPSocket):
         # Pass data into receive buffer so that the application thread can
         # retrieve it.
         try:
-            self._recvbuf.put_nowait(chunk)
+            if seqnum == self._last_received_seq_num + 1:
+                self._last_received_seq_num += 1
+                self._recvbuf.put_nowait(chunk)
 
             # SEND ACK TO CLIENT
             # build segment with header and checksum
-            sequence_number = seqnum + datalen
+            sequence_number = self._last_received_seq_num
             candidate_segment = self.build_segment_header(sequence_number, 0)
             cksumval = BTCPSocket.in_cksum(candidate_segment)
             segment = self.build_segment_header(sequence_number, 0, checksum=cksumval)
@@ -344,8 +346,7 @@ class BTCPServerSocket(BTCPSocket):
         """
         logger.debug("accept called")
         self._state = BTCPStates.ESTABLISHED
-
-        #raise NotImplementedError("No implementation of accept present. Read the comments & code of server_socket.py.")
+        self._last_received_seq_num = 12345 - 1
 
 
     def recv(self):
