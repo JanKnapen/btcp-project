@@ -292,6 +292,7 @@ class BTCPServerSocket(BTCPSocket):
             return
 
         if ack_set:
+            logger.debug("CLOSED NOW")
             self._state = BTCPStates.CLOSED
 
 
