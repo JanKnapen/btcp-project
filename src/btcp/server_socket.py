@@ -292,7 +292,7 @@ class BTCPServerSocket(BTCPSocket):
             return
 
         if ack_set:
-            self.close()
+            self._state = BTCPStates.CLOSED
 
 
     def _other_segment_received(self, segment):
