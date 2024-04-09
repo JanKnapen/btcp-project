@@ -50,6 +50,7 @@ class BTCPClientSocket(BTCPSocket):
 
         self._window_size = 5
         self._segment_data = {}
+        self._data_sent_and_received = False
 
         # The data buffer used by send() to send data from the application
         # thread into the network thread. Bounded in size.
@@ -139,7 +140,10 @@ class BTCPClientSocket(BTCPSocket):
         if acknum == self._send_base:
             logger.debug("SENDING NEXT SEGMENT WITHIN WINDOW")
             self._send_base += 1
-            self._send_segment(self._send_base + self._window_size - 1)
+            if self._send_base > max(self._segment_data.keys()):
+                self._data_sent_and_received = True
+            else:
+                self._send_segment(self._send_base + self._window_size - 1)
 
 
     def _other_segment_received(self, segment):
@@ -337,9 +341,6 @@ class BTCPClientSocket(BTCPSocket):
                     sent_bytes,
                     datalen)
         self._send_data()
-        while self._send_base - 1 != max(self._segment_data.keys()):
-            logger.debug("STAYING ALIVE")
-            time.sleep(0.001)
         return sent_bytes
 
 
@@ -359,7 +360,8 @@ class BTCPClientSocket(BTCPSocket):
         more advanced thread synchronization in this project.
         """
         logger.debug("shutdown called")
-        #raise NotImplementedError("No implementation of shutdown present. Read the comments & code of client_socket.py.")
+        while not self._data_sent_and_received:
+            time.sleep(0.001)
 
 
     def close(self):
