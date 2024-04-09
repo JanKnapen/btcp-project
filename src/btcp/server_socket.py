@@ -187,6 +187,7 @@ class BTCPServerSocket(BTCPSocket):
 
         if ack_set and acknum == self._seq_num + 1:
             self._state = BTCPStates.ESTABLISHED
+            self._last_received_seq_num = seqnum - 1
 
 
     def _closed_segment_received(self, segment):
@@ -391,7 +392,6 @@ class BTCPServerSocket(BTCPSocket):
 
         while self._state != BTCPStates.ESTABLISHED:
             time.sleep(0.005)
-        # self._last_received_seq_num = 10 - 1
 
 
     def recv(self):
