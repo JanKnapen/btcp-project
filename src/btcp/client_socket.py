@@ -115,9 +115,10 @@ class BTCPClientSocket(BTCPSocket):
             case _:
                 self._other_segment_received(segment)
 
-        total_milliseconds = (datetime.datetime.now() - self._segment_data[self._send_base]["sent_on"]).total_seconds() * 1000
-        if total_milliseconds > TIMER_TICK:
-            self._resend_all_segments_in_window()
+        if self._send_base in self._segment_data and "sent_on" in self._segment_data[self._send_base]:
+            total_milliseconds = (datetime.datetime.now() - self._segment_data[self._send_base]["sent_on"]).total_seconds() * 1000
+            if total_milliseconds > TIMER_TICK:
+                self._resend_all_segments_in_window()
 
         self._send_data()
 
