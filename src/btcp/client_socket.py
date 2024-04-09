@@ -180,6 +180,7 @@ class BTCPClientSocket(BTCPSocket):
 
 
     def _resend_all_segments_in_window(self):
+        logger.debug(str(max(self._segment_data.keys())))
         for i in range(self._send_base, self._send_base + self._window_size):
             self._send_segment(i)
 
