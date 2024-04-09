@@ -161,7 +161,6 @@ class BTCPClientSocket(BTCPSocket):
             logger.debug("Received segment with invalid checksum")
             return
 
-        self._window_size = window * 10
         if acknum == self._send_base:
             logger.debug("SENDING NEXT SEGMENT WITHIN WINDOW")
             self._send_base = 0 if self._send_base == MAX_SEQUENCE_NUMBER else self._send_base + 1

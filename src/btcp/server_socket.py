@@ -244,10 +244,9 @@ class BTCPServerSocket(BTCPSocket):
                 # SEND ACK TO CLIENT
                 # build segment with header and checksum
                 sequence_number = self._last_received_seq_num
-                window_size = int(max((self._recvbuf.maxsize - self._recvbuf.qsize()) / 10, 1))
-                candidate_segment = self.build_segment_header(0, sequence_number, window=window_size)
+                candidate_segment = self.build_segment_header(0, sequence_number)
                 cksumval = BTCPSocket.in_cksum(candidate_segment)
-                segment = self.build_segment_header(0, sequence_number, window=window_size, checksum=cksumval)
+                segment = self.build_segment_header(0, sequence_number, checksum=cksumval)
                 logger.info("Sending ack. with acknum: " + str(sequence_number))
                 self._lossy_layer.send_segment(segment)
         except queue.Full:
