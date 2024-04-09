@@ -1,3 +1,4 @@
+import datetime
 import random
 
 from btcp.btcp_socket import BTCPSocket, BTCPStates, BTCPSignals
@@ -230,33 +231,49 @@ class BTCPServerSocket(BTCPSocket):
         if not checksumvalid:
             logger.debug("Received segment with invalid checksum")
             return
-        # datalen, = struct.unpack("!H", segment[6:8])
-        # Slice data from incoming segment.
-        chunk = segment[HEADER_SIZE:HEADER_SIZE + datalen]
-        # Pass data into receive buffer so that the application thread can
-        # retrieve it.
-        try:
-            if (seqnum == 0 and self._last_received_seq_num == MAX_SEQUENCE_NUMBER) or seqnum == self._last_received_seq_num + 1:
-                self._recvbuf.put_nowait(chunk)
-                self._last_received_seq_num = 0 if self._last_received_seq_num == MAX_SEQUENCE_NUMBER else self._last_received_seq_num + 1
 
-                # SEND ACK TO CLIENT
-                # build segment with header and checksum
-                sequence_number = self._last_received_seq_num
-                candidate_segment = self.build_segment_header(0, sequence_number)
-                cksumval = BTCPSocket.in_cksum(candidate_segment)
-                segment = self.build_segment_header(0, sequence_number, checksum=cksumval)
-                logger.info("Sending ack. with acknum: " + str(sequence_number))
-                self._lossy_layer.send_segment(segment)
-        except queue.Full:
-            # Data gets dropped if the receive buffer is full. You need to
-            # ensure this doesn't happen by using window sizes and not
-            # acknowledging dropped data.
-            # Initially, while still developing other features,
-            # you can also just set the size limitation on the Queue
-            # much higher, or remove it altogether.
-            logger.critical("Data got dropped!")
-            # logger.debug(chunk)
+        if fin_set:
+            self._close_connection()
+        else:
+            # datalen, = struct.unpack("!H", segment[6:8])
+            # Slice data from incoming segment.
+            chunk = segment[HEADER_SIZE:HEADER_SIZE + datalen]
+            # Pass data into receive buffer so that the application thread can
+            # retrieve it.
+            try:
+                if (seqnum == 0 and self._last_received_seq_num == MAX_SEQUENCE_NUMBER) or seqnum == self._last_received_seq_num + 1:
+                    self._recvbuf.put_nowait(chunk)
+                    self._last_received_seq_num = 0 if self._last_received_seq_num == MAX_SEQUENCE_NUMBER else self._last_received_seq_num + 1
+
+                    # SEND ACK TO CLIENT
+                    # build segment with header and checksum
+                    sequence_number = self._last_received_seq_num
+                    candidate_segment = self.build_segment_header(0, sequence_number)
+                    cksumval = BTCPSocket.in_cksum(candidate_segment)
+                    segment = self.build_segment_header(0, sequence_number, checksum=cksumval)
+                    logger.info("Sending ack. with acknum: " + str(sequence_number))
+                    self._lossy_layer.send_segment(segment)
+            except queue.Full:
+                # Data gets dropped if the receive buffer is full. You need to
+                # ensure this doesn't happen by using window sizes and not
+                # acknowledging dropped data.
+                # Initially, while still developing other features,
+                # you can also just set the size limitation on the Queue
+                # much higher, or remove it altogether.
+                logger.critical("Data got dropped!")
+                # logger.debug(chunk)
+
+
+    def _close_connection(self):
+        # wait until recvbuf is empty
+        while not self._recvbuf.empty():
+            time.sleep(0.005)
+        candidate_segment = self.build_segment_header(0, 0, ack_set=True, fin_set=True)
+        cksumval = BTCPSocket.in_cksum(candidate_segment)
+        segment = self.build_segment_header(0, 0, ack_set=True, fin_set=True, checksum=cksumval)
+        logger.debug("SENDING FIN and ACK")
+        self._lossy_layer.send_segment(segment)
+        self._state = BTCPStates.CLOSING
 
 
     def _closing_segment_received(self, segment):
@@ -268,6 +285,15 @@ class BTCPServerSocket(BTCPSocket):
         logger.info("Segment received in CLOSING state.")
         logger.info("This needs to be properly implemented. "
                     "Currently only here for demonstration purposes.")
+        seqnum, acknum, syn_set, ack_set, fin_set, window, datalen, checksum = BTCPSocket.unpack_segment_header(segment[:HEADER_SIZE])
+        checksumvalid = BTCPSocket.verify_checksum(segment)
+        logger.debug("header is: {}, {}, {}, {}, {}, {}, {}, {}, checksumvalid={}".format(seqnum, acknum, syn_set, ack_set, fin_set, window, datalen, checksum, checksumvalid))
+        if not checksumvalid:
+            logger.debug("Received segment with invalid checksum")
+            return
+
+        if ack_set:
+            self.close()
 
 
     def _other_segment_received(self, segment):

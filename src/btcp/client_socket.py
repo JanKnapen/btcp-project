@@ -50,7 +50,7 @@ class BTCPClientSocket(BTCPSocket):
         self._lossy_layer = LossyLayer(self, CLIENT_IP, CLIENT_PORT, SERVER_IP, SERVER_PORT)
 
         self._window_size = 100
-        self._data_sent_and_received = False
+        self._connection_terminated = False
         self._segments = queue.Queue()
         self._segments_sent = {}
 
@@ -118,6 +118,8 @@ class BTCPClientSocket(BTCPSocket):
                 self._established_segment_received(segment)
             case BTCPStates.SYN_SENT:
                 self._syn_sent_segment_received(segment)
+            case BTCPStates.FIN_SENT:
+                self._fin_sent_segment_received(segment)
             case _:
                 self._other_segment_received(segment)
 
@@ -165,7 +167,7 @@ class BTCPClientSocket(BTCPSocket):
             logger.debug("SENDING NEXT SEGMENT WITHIN WINDOW")
             self._send_base = 0 if self._send_base == MAX_SEQUENCE_NUMBER else self._send_base + 1
             if self._send_base == self._seq_num - 1:
-                self._data_sent_and_received = True
+                self._close_connection()
             elif not self._segments.empty():
                 self._send_segment(self._send_base + self._window_size - 1, self._segments.get())
 
@@ -279,6 +281,37 @@ class BTCPClientSocket(BTCPSocket):
         self._lossy_layer.send_segment(segment)
         self._state = BTCPStates.SYN_SENT
         self._syn_sent_on = datetime.datetime.now()
+
+
+    def _close_connection(self):
+        candidate_segment = self.build_segment_header(0, 0, fin_set=True)
+        cksumval = BTCPSocket.in_cksum(candidate_segment)
+        segment = self.build_segment_header(0, 0, fin_set=True, checksum=cksumval)
+        logger.debug("SENDING FIN")
+        self._lossy_layer.send_segment(segment)
+        self._state = BTCPStates.FIN_SENT
+        self._fin_sent_on = datetime.datetime.now()
+        # TODO: fin sent timeout
+
+
+    def _fin_sent_segment_received(self, segment):
+        logger.debug("_fin_sent_segment_received called")
+
+        seqnum, acknum, syn_set, ack_set, fin_set, window, length, checksum = BTCPSocket.unpack_segment_header(segment[:HEADER_SIZE])
+        checksumvalid = BTCPSocket.verify_checksum(segment)
+        logger.debug("header is: {}, {}, {}, {}, {}, {}, {}, {}, checksumvalid={}".format(seqnum, acknum, syn_set, ack_set, fin_set, window, length, checksum, checksumvalid))
+        if not checksumvalid:
+            logger.debug("Received segment with invalid checksum")
+            return
+
+        if ack_set and fin_set:
+            candidate_segment = self.build_segment_header(0, 0, ack_set=True)
+            cksumval = BTCPSocket.in_cksum(candidate_segment)
+            segment = self.build_segment_header(0, 0, ack_set=True, checksum=cksumval)
+            logger.debug("SENDING ACK to FIN")
+            self._lossy_layer.send_segment(segment)
+            self._state = BTCPStates.CLOSED
+            self._connection_terminated = True
 
 
 
@@ -412,7 +445,7 @@ class BTCPClientSocket(BTCPSocket):
         more advanced thread synchronization in this project.
         """
         logger.debug("shutdown called")
-        while not self._data_sent_and_received:
+        while not self._connection_terminated:
             time.sleep(0.005)
 
 
