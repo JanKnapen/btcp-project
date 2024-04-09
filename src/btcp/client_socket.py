@@ -339,7 +339,7 @@ class BTCPClientSocket(BTCPSocket):
         self._send_data()
         while self._send_base - 1 != max(self._segment_data.keys()):
             logger.debug("STAYING ALIVE")
-            time.sleep(1000)
+            time.sleep(1)
         return sent_bytes
 
 
