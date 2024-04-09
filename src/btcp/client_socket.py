@@ -180,7 +180,6 @@ class BTCPClientSocket(BTCPSocket):
 
 
     def _resend_all_segments_in_window(self):
-        logger.debug(str(max(self._segment_data.keys())))
         for i in range(self._send_base, self._send_base + self._window_size):
             self._send_segment(i)
 
@@ -338,7 +337,7 @@ class BTCPClientSocket(BTCPSocket):
                     sent_bytes,
                     datalen)
         self._send_data()
-        while self._send_base != max(self._segment_data.keys()):
+        while self._send_base - 1 != max(self._segment_data.keys()):
             logger.debug("STAYING ALIVE")
             time.sleep(1000)
         return sent_bytes
