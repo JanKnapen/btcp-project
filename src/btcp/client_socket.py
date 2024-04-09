@@ -49,7 +49,7 @@ class BTCPClientSocket(BTCPSocket):
         super().__init__(window, timeout)
         self._lossy_layer = LossyLayer(self, CLIENT_IP, CLIENT_PORT, SERVER_IP, SERVER_PORT)
 
-        self._window_size = 100
+        self._window_size = 700
         self._connection_terminated = False
         self._segments = queue.Queue()
         self._segments_sent = {}
