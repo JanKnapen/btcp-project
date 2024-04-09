@@ -1,3 +1,5 @@
+import datetime
+
 from btcp.btcp_socket import BTCPSocket, BTCPStates
 from btcp.lossy_layer import LossyLayer
 from btcp.constants import *
@@ -46,7 +48,7 @@ class BTCPClientSocket(BTCPSocket):
         self._lossy_layer = LossyLayer(self, CLIENT_IP, CLIENT_PORT, SERVER_IP, SERVER_PORT)
 
         self._window_size = 5
-        self._segments = {}
+        self._segment_data = {}
 
         # The data buffer used by send() to send data from the application
         # thread into the network thread. Bounded in size.
@@ -113,6 +115,12 @@ class BTCPClientSocket(BTCPSocket):
             case _:
                 self._other_segment_received(segment)
 
+        total_milliseconds = (datetime.datetime.now() - self._segment_data[self._send_base]["sent_on"]).total_seconds() * 1000
+        if total_milliseconds > TIMER_TICK:
+            self._resend_all_segments_in_window()
+
+        self._send_data()
+
 
     def _established_segment_received(self, segment):
         logger.debug("_established_segment_received called")
@@ -126,9 +134,7 @@ class BTCPClientSocket(BTCPSocket):
 
         if acknum == self._send_base:
             self._send_base += 1
-            next_segment = self._segments[self._send_base + self._window_size - 1]
-            if next_segment:
-                self._lossy_layer.send_segment(next_segment)
+            self._send_segment(self._send_base + self._window_size - 1)
 
 
     def _other_segment_received(self, segment):
@@ -163,6 +169,17 @@ class BTCPClientSocket(BTCPSocket):
         """
         logger.debug("lossy_layer_tick called")
 
+        self._resend_all_segments_in_window()
+
+        self._send_data()
+
+
+    def _resend_all_segments_in_window(self):
+        for i in range(self._send_base, self._send_base + self._window_size):
+            self._send_segment(i)
+
+
+    def _send_data(self):
         # Actually send all chunks available for sending.
         # Relies on an eventual exception to break from the loop when no data
         # is available.
@@ -188,12 +205,21 @@ class BTCPClientSocket(BTCPSocket):
                 cksumval = BTCPSocket.in_cksum(candidate_segment)
                 segment = (self.build_segment_header(sequence_number, 0, length=datalen, checksum=cksumval)
                            + chunk)
-                self._segments[sequence_number] = segment
+                self._segment_data[sequence_number] = {
+                    "segment": segment,
+                }
                 if sequence_number < (self._send_base + self._window_size):
-                    logger.info("Sending segment.")
-                    self._lossy_layer.send_segment(segment)
+                    self._send_segment(sequence_number)
         except queue.Empty:
             logger.info("No (more) data was available for sending right now.")
+
+
+    def _send_segment(self, segment_seq_num):
+            logger.info("Sending segment.")
+            segment_data = self._segment_data[segment_seq_num]
+            if segment_data:
+                self._lossy_layer.send_segment(segment_data["segment"])
+                self._segment_data[segment_seq_num]["sent_on"] = datetime.datetime.now()
 
 
 
