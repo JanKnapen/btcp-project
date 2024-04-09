@@ -467,29 +467,30 @@ class BTCPServerSocket(BTCPSocket):
         # data to appear.
         data = bytearray()
         logger.info("Retrieving data from receive queue")
-        try:
+        # try:
             # Wait until one segment becomes available in the buffer, or
             # timeout signalling disconnect.
-            logger.info("Blocking get for first chunk of data.")
-            while self._state != BTCPStates.CLOSED:
-                logger.debug("STILL NOT CLOSED: " + str(self._state))
+        logger.info("Blocking get for first chunk of data.")
+        while self._state != BTCPStates.CLOSED:
+            logger.debug("STILL NOT CLOSED: " + str(self._state))
+            try:
                 item = self._recvbuf.get_nowait()
-                if item is not None:
-                    logger.debug("FOUND AN ITEM: " + str(item))
-                    data.extend(item)
-                    break
+                data.extend(item)
+                break
+            except queue.Empty:
+                pass
                     # data.extend(self._recvbuf.get(block=True, timeout=30))
-            logger.debug("First chunk of data retrieved.")
-            logger.debug("Looping over rest of queue.")
-            while True:
-                # Empty the rest of the buffer, until queue.Empty exception
-                # exits the loop. If that happens, data contains received
-                # segments so that will *not* signal disconnect.
-                data.extend(self._recvbuf.get_nowait())
-                logger.debug("Additional chunk of data retrieved.")
-        except queue.Empty:
-            logger.debug("Queue emptied or timeout reached")
-            pass # (Not break: the exception itself has exited the loop)
+        #     logger.debug("First chunk of data retrieved.")
+        #     logger.debug("Looping over rest of queue.")
+        #     while True:
+        #         # Empty the rest of the buffer, until queue.Empty exception
+        #         # exits the loop. If that happens, data contains received
+        #         # segments so that will *not* signal disconnect.
+        #         data.extend(self._recvbuf.get_nowait())
+        #         logger.debug("Additional chunk of data retrieved.")
+        # except queue.Empty:
+        #     logger.debug("Queue emptied or timeout reached")
+        #     pass # (Not break: the exception itself has exited the loop)
         logger.debug(data)
         if not data:
             logger.info("No data received for 30 seconds.")
