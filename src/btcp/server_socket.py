@@ -200,15 +200,15 @@ class BTCPServerSocket(BTCPSocket):
         # retrieve it.
         try:
             if seqnum == self._last_received_seq_num + 1:
-                self._last_received_seq_num += 1
                 self._recvbuf.put_nowait(chunk)
+                self._last_received_seq_num += 1
 
             # SEND ACK TO CLIENT
             # build segment with header and checksum
             sequence_number = self._last_received_seq_num
-            candidate_segment = self.build_segment_header(sequence_number, 0)
+            candidate_segment = self.build_segment_header(0, sequence_number)
             cksumval = BTCPSocket.in_cksum(candidate_segment)
-            segment = self.build_segment_header(sequence_number, 0, checksum=cksumval)
+            segment = self.build_segment_header(0, sequence_number, checksum=cksumval)
             logger.info("Sending ack.")
             self._lossy_layer.send_segment(segment)
         except queue.Full:

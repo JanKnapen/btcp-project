@@ -139,8 +139,7 @@ class BTCPSocket:
         than make a separate method for every individual field.
         """
         logger.debug("unpack_segment_header() called")
-        return struct.unpack("!HHbbHH", header)
-        logger.debug("unpack_segment_header() done")
+        return struct.unpack("!HHBBHH", header)
     
 
         
